@@ -217,22 +217,43 @@
     }
     
     function enviarWhatsAppGeral() { 
-        let txt = `*Relatório de Produtos*\n\n`; 
+        let txt = `*Relatório de Produtos - Gabriel*\n\n`; 
         let temItemTotal = false; 
+
         Object.keys(memoria).forEach(setor => { 
             const itens = memoria[setor].filter(i => i.qtd > 0); 
+
             if(itens.length > 0) { 
-                txt += `--- *SETOR: ${setor.toUpperCase()}* ---\n`; 
-                itens.forEach(i => { txt += `📦 *Cód:* ${i.cod}\n🔹 *Prod:* ${i.item}\n🔢 *Qtd:* ${i.qtd}\n💰 *Preço:* ${i.preco}\n----------\n`; }); 
-                txt += `\n`; 
+                txt += `--- *SETOR: ${setor.toUpperCase()}* ---\n`;
+
+                itens.forEach(i => { 
+                    txt += `📦 *Cód:* ${i.cod}\n`;
+                    txt += `🔹 *Prod:* ${i.item}\n`;
+                    txt += `🔢 *Qtd:* ${i.qtd}\n`;
+                    txt += `💰 *Preço:* ${i.preco}\n`;
+                    txt += `----------\n`;
+                }); 
+
+                txt += `\n`;
                 temItemTotal = true; 
             } 
         }); 
-        if(!temItemTotal) return mostrarAviso("Nenhum item!"); 
-        const link = "https://wa.me/?text=" + encodeURIComponent(txt); 
-        window.open(link, '_blank'); 
+
+        if(!temItemTotal) {
+            mostrarAviso("Nenhum item!");
+            return;
+        }
+
+        const url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(txt);
+
+        // 🔥 FIX DEFINITIVO PARA KODULAR / WEBVIEW
+        try {
+            window.open(url, "_system");
+        } catch(e) {
+            window.location.href = url;
+        }
     }
-    
+
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     function zerarQuantidades() { if(confirm("Zerar setor?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); renderizar(); } }
     function salvarAgoraManual() { localStorage.setItem('GABRIEL_DATA_V52', JSON.stringify(memoria)); mostrarAviso("✅ Tudo Salvo!"); }
