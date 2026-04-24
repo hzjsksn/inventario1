@@ -41,7 +41,7 @@
         .btn-del { background: #ff4d4d; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
         
         #photoOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
-        #resultImage { max-width: 100%; max-height: 80%; object-fit: contain; border: 1px solid #555; background: white; margin-bottom: 15px; }
+        #resultImage { max-width: 100%; max-height: 70%; object-fit: contain; border: 1px solid #555; background: white; margin-bottom: 15px; }
         .setor-titulo-captura { background: #eee; padding: 8px; margin-top: 15px; text-align: center; border-radius: 5px; color: #333; font-size: 14px; font-weight: bold; }
     </style>
 </head>
@@ -50,9 +50,12 @@
 <div id="customAlert"></div>
 
 <div id="photoOverlay" class="hidden">
-    <p style="color:#25d366; font-weight:bold; margin-bottom: 10px; font-size: 16px;">📸 TIRE UM PRINT DA TELA!</p>
+    <p style="color:#25d366; font-weight:bold; margin-bottom: 10px; font-size: 16px;">📸 RELATÓRIO GERADO!</p>
     <img id="resultImage" src="">
-    <button class="btn-red" style="width: 90%;" onclick="fecharFoto()">FECHAR RELATÓRIO</button>
+    <div style="width: 90%; display: flex; flex-direction: column; gap: 5px;">
+        <button class="btn-green" onclick="compartilharFotoKodular()">💾 COMPARTILHAR FOTO</button>
+        <button class="btn-red" onclick="fecharFoto()">FECHAR</button>
+    </div>
 </div>
 
 <div class="container">
@@ -109,7 +112,7 @@
     </div>
 </div>
 
-<div class="version-footer">versão 0.52 - Mobile Ready</div>
+<div class="version-footer">versão 0.53 - Mobile Ready</div>
 
 <script>
     let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
@@ -120,9 +123,9 @@
     function setOp(op) { operacaoAtual = op; document.querySelectorAll('.btn-op').forEach(btn => btn.classList.remove('active')); document.getElementById('op-' + op).classList.add('active'); mostrarAviso("Modo alterado!"); }
     
     function carregarTudo() { 
-        const d = localStorage.getItem('GABRIEL_DATA_V52'); 
+        const d = localStorage.getItem('GABRIEL_DATA_V53'); 
         if (d) memoria = JSON.parse(d); 
-        const loginSalvo = localStorage.getItem('GABRIEL_LOGIN_V52'); 
+        const loginSalvo = localStorage.getItem('GABRIEL_LOGIN_V53'); 
         if (loginSalvo) { 
             const obj = JSON.parse(loginSalvo); 
             document.getElementById('usuario').value = obj.u || ""; 
@@ -136,9 +139,9 @@
         const s = document.getElementById('senha').value.trim(); 
         if (u === "Gabriel" && s === "12345") { 
             if (document.getElementById('lembrar').checked) { 
-                localStorage.setItem('GABRIEL_LOGIN_V52', JSON.stringify({u: u, s: s})); 
+                localStorage.setItem('GABRIEL_LOGIN_V53', JSON.stringify({u: u, s: s})); 
             } else {
-                localStorage.removeItem('GABRIEL_LOGIN_V52');
+                localStorage.removeItem('GABRIEL_LOGIN_V53');
             }
             document.getElementById('loginSection').classList.add('hidden'); 
             document.getElementById('menuSection').classList.remove('hidden'); 
@@ -160,7 +163,7 @@
             tr.innerHTML = `<td>${obj.cod}</td><td>${obj.item}</td><td class="qtd-editavel" onclick="calcularQtd(${i})">${obj.qtd}</td><td>R$ ${obj.preco}</td><td class="no-photo"><button class="btn-del" onclick="removerItem(${i})">❌</button></td>`; 
             corpo.appendChild(tr); 
         }); 
-        localStorage.setItem('GABRIEL_DATA_V52', JSON.stringify(memoria)); 
+        localStorage.setItem('GABRIEL_DATA_V53', JSON.stringify(memoria)); 
     }
     
     function calcularQtd(i) { 
@@ -207,6 +210,7 @@
                 container.innerHTML += html; 
             } 
         }); 
+        
         setTimeout(() => { 
             html2canvas(document.getElementById('areaCapture'), { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => { 
                 document.getElementById('resultImage').src = canvas.toDataURL("image/png"); 
@@ -215,6 +219,16 @@
             }); 
         }, 500); 
     }
+
+    function compartilharFotoKodular() {
+        const imgData = document.getElementById('resultImage').src;
+        if (window.AppInventor) {
+            window.AppInventor.setWebViewString(imgData);
+            mostrarAviso("Imagem enviada ao App!");
+        } else {
+            mostrarAviso("Erro: AppInventor não detectado.");
+        }
+    }
     
     function enviarWhatsAppGeral() { 
         let txt = `*Relatório de Produtos - Gabriel*\n\n`; 
@@ -222,41 +236,24 @@
 
         Object.keys(memoria).forEach(setor => { 
             const itens = memoria[setor].filter(i => i.qtd > 0); 
-
             if(itens.length > 0) { 
                 txt += `--- *SETOR: ${setor.toUpperCase()}* ---\n`;
-
                 itens.forEach(i => { 
-                    txt += `📦 *Cód:* ${i.cod}\n`;
-                    txt += `🔹 *Prod:* ${i.item}\n`;
-                    txt += `🔢 *Qtd:* ${i.qtd}\n`;
-                    txt += `💰 *Preço:* ${i.preco}\n`;
-                    txt += `----------\n`;
+                    txt += `📦 *Cód:* ${i.cod}\n🔹 *Prod:* ${i.item}\n🔢 *Qtd:* ${i.qtd}\n💰 *Preço:* ${i.preco}\n----------\n`;
                 }); 
-
                 txt += `\n`;
                 temItemTotal = true; 
             } 
         }); 
 
-        if(!temItemTotal) {
-            mostrarAviso("Nenhum item!");
-            return;
-        }
-
+        if(!temItemTotal) return mostrarAviso("Nenhum item!"); 
         const url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(txt);
-
-        // 🔥 FIX DEFINITIVO PARA KODULAR / WEBVIEW
-        try {
-            window.open(url, "_system");
-        } catch(e) {
-            window.location.href = url;
-        }
+        try { window.open(url, "_system"); } catch(e) { window.location.href = url; }
     }
 
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     function zerarQuantidades() { if(confirm("Zerar setor?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); renderizar(); } }
-    function salvarAgoraManual() { localStorage.setItem('GABRIEL_DATA_V52', JSON.stringify(memoria)); mostrarAviso("✅ Tudo Salvo!"); }
+    function salvarAgoraManual() { localStorage.setItem('GABRIEL_DATA_V53', JSON.stringify(memoria)); mostrarAviso("✅ Tudo Salvo!"); }
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function logout() { location.reload(); }
 </script>
